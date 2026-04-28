@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playwright 데모 - 프로젝트 대시보드</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; color: #2d3748; }
+
+    /* ── 헤더 ── */
+    header {
+      background: linear-gradient(135deg, #2b2d42, #8d99ae);
+      color: white; padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1.3rem; }
+    .header-meta { font-size: 0.78rem; opacity: 0.75; }
+
+    /* ── 탭 ── */
+    .tabs { display: flex; background: white; border-bottom: 2px solid #e2e8f0; padding: 0 32px; }
+    .tab-btn {
+      padding: 14px 24px; font-size: 0.88rem; font-weight: 600;
+      border: none; background: none; cursor: pointer; color: #718096;
+      border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s;
+    }
+    .tab-btn:hover { color: #2b2d42; }
+    .tab-btn.active { color: #2b2d42; border-bottom-color: #e53e3e; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .container { max-width: 980px; margin: 32px auto; padding: 0 20px; }
+
+    /* ── 카드 ── */
+    .card {
+      background: white; border-radius: 12px; padding: 26px;
+      margin-bottom: 24px; box-shadow: 0 1px 10px rgba(0,0,0,.06);
+    }
+    .card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 18px;
+      padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; color: #2b2d42; }
+
+    /* ── 통계 카드 ── */
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: white; border-radius: 10px; padding: 20px;
+      box-shadow: 0 1px 8px rgba(0,0,0,.06); text-align: center; cursor: default;
+      transition: transform .15s, box-shadow .15s; position: relative;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+    .stat-card .num { font-size: 2rem; font-weight: 800; }
+    .stat-card .label { font-size: 0.78rem; color: #718096; margin-top: 4px; }
+    .stat-card .tooltip {
+      display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%); background: #2d3748; color: white;
+      font-size: 0.75rem; padding: 5px 10px; border-radius: 6px; white-space: nowrap; z-index: 10;
+    }
+    .stat-card:hover .tooltip { display: block; }
+    .c-blue  { color: #3182ce; }
+    .c-green { color: #38a169; }
+    .c-red   { color: #e53e3e; }
+    .c-orange{ color: #dd6b20; }
+
+    /* ── 작업 입력 ── */
+    .task-form { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .task-form input[type=text] {
+      flex: 1; min-width: 200px; padding: 9px 14px;
+      border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.88rem;
+    }
+    .task-form input:focus { outline: none; border-color: #4299e1; box-shadow: 0 0 0 3px rgba(66,153,225,.15); }
+    .task-form select {
+      padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+      font-size: 0.85rem; background: white;
+    }
+    .btn {
+      padding: 9px 20px; border: none; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all .15s;
+    }
+    .btn-red   { background: #e53e3e; color: white; }
+    .btn-red:hover   { background: #c53030; }
+    .btn-green { background: #38a169; color: white; }
+    .btn-green:hover { background: #2f855a; }
+    .btn-blue  { background: #3182ce; color: white; }
+    .btn-blue:hover  { background: #2b6cb0; }
+    .btn-gray  { background: #e2e8f0; color: #4a5568; }
+    .btn-gray:hover  { background: #cbd5e0; }
+
+    /* ── 우선순위 필터 ── */
+    .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 5px 14px; border-radius: 20px; border: 1px solid #e2e8f0;
+      font-size: 0.8rem; cursor: pointer; background: white; transition: all .15s;
+    }
+    .filter-btn.active, .filter-btn:hover { border-color: #4299e1; background: #ebf8ff; color: #2b6cb0; }
+
+    /* ── 작업 목록 ── */
+    #task-list { list-style: none; }
+    .task-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid #f7fafc; transition: background .1s;
+    }
+    .task-item:hover { background: #f7fafc; margin: 0 -10px; padding: 12px 10px; border-radius: 8px; }
+    .task-item input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: #38a169; }
+    .task-text { flex: 1; font-size: 0.88rem; }
+    .task-text.done { text-decoration: line-through; color: #a0aec0; }
+    .priority-tag {
+      font-size: 0.72rem; font-weight: 700; padding: 2px 9px; border-radius: 10px;
+    }
+    .p-high   { background: #fff5f5; color: #e53e3e; }
+    .p-medium { background: #fffaf0; color: #dd6b20; }
+    .p-low    { background: #f0fff4; color: #38a169; }
+    .del-btn  { background: none; border: none; cursor: pointer; color: #a0aec0; font-size: 1rem; transition: color .15s; }
+    .del-btn:hover { color: #e53e3e; }
+    #empty-msg { color: #a0aec0; font-size: 0.85rem; text-align: center; padding: 20px; display: none; }
+
+    /* ── 진행률 바 ── */
+    .progress-wrap { margin-top: 12px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: #718096; margin-bottom: 6px; }
+    .progress-bar { height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #38a169, #68d391); transition: width .4s; border-radius: 10px; }
+
+    /* ── 아코디언 FAQ ── */
+    .accordion-item { border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+    .accordion-header {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 18px; background: white; border: none; cursor: pointer;
+      font-size: 0.88rem; font-weight: 600; color: #2d3748; text-align: left; transition: background .15s;
+    }
+    .accordion-header:hover { background: #f7fafc; }
+    .accordion-icon { font-size: 1.1rem; transition: transform .25s; color: #718096; }
+    .accordion-item.open .accordion-icon { transform: rotate(45deg); }
+    .accordion-body { max-height: 0; overflow: hidden; transition: max-height .3s ease, padding .3s; }
+    .accordion-item.open .accordion-body { max-height: 200px; }
+    .accordion-body-inner { padding: 0 18px 16px; font-size: 0.85rem; color: #718096; line-height: 1.7; }
+
+    /* ── 통계 탭 ── */
+    .chart-row { display: flex; gap: 20px; flex-wrap: wrap; }
+    .chart-box { flex: 1; min-width: 200px; }
+    .chart-box h4 { font-size: 0.82rem; color: #718096; margin-bottom: 10px; }
+    .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
+    .bar-label { width: 60px; color: #4a5568; }
+    .bar-track { flex: 1; height: 14px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; transition: width .5s; }
+    .bar-val { width: 28px; color: #718096; text-align: right; }
+
+    /* ── 토스트 ── */
+    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 20px; border-radius: 10px; color: white; font-size: 0.85rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,.18); animation: slideIn .3s ease;
+      display: flex; align-items: center; gap: 8px; min-width: 220px;
+    }
+    .toast.success { background: #38a169; }
+    .toast.error   { background: #e53e3e; }
+    .toast.info    { background: #3182ce; }
+    @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ── 키보드 단축키 안내 ── */
+    .shortcut-hint { font-size: 0.75rem; color: #a0aec0; margin-top: 8px; }
+    kbd { background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; padding: 1px 6px; font-size: 0.75rem; }
+
+    footer { text-align: center; padding: 28px; font-size: 0.78rem; color: #a0aec0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Project Dashboard</h1>
+  <span class="header-meta">Playwright Demo v1.0 · QA Portfolio</span>
+</header>
+
+<!-- 탭 네비게이션 -->
+<div class="tabs" id="tab-nav">
+  <button class="tab-btn active" data-tab="overview" id="tab-overview">개요</button>
+  <button class="tab-btn" data-tab="tasks"    id="tab-tasks">작업 관리</button>
+  <button class="tab-btn" data-tab="faq"      id="tab-faq">FAQ</button>
+  <button class="tab-btn" data-tab="stats"    id="tab-stats">통계</button>
+</div>
+
+<div class="container">
+
+  <!-- ── 개요 탭 ── -->
+  <div class="tab-panel active" id="panel-overview">
+    <div class="stat-grid">
+      <div class="stat-card" id="stat-total">
+        <div class="tooltip">전체 등록 작업 수</div>
+        <div class="num c-blue" id="stat-num-total">12</div>
+        <div class="label">전체 작업</div>
+      </div>
+      <div class="stat-card" id="stat-done">
+        <div class="tooltip">완료 처리된 작업</div>
+        <div class="num c-green" id="stat-num-done">7</div>
+        <div class="label">완료</div>
+      </div>
+      <div class="stat-card" id="stat-high">
+        <div class="tooltip">우선순위 높음 작업</div>
+        <div class="num c-red" id="stat-num-high">3</div>
+        <div class="label">긴급</div>
+      </div>
+      <div class="stat-card" id="stat-members">
+        <div class="tooltip">프로젝트 참여 인원</div>
+        <div class="num c-orange" id="stat-num-members">5</div>
+        <div class="label">팀원</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>프로젝트 공지</h3>
+      <p id="notice-text" style="font-size:0.88rem;line-height:1.8;color:#4a5568;">
+        이번 주 금요일 릴리즈 전 회귀 테스트를 완료해주세요.<br>
+        신규 기능 3건은 <strong>탭 → 작업 관리</strong>에서 확인 가능합니다.<br>
+        문의사항은 <strong>FAQ</strong> 탭을 참고해주세요.
+      </p>
+      <button class="btn btn-gray" style="margin-top:14px;" id="edit-notice-btn" onclick="toggleEditNotice()">공지 수정</button>
+      <textarea id="notice-editor" style="display:none;width:100%;margin-top:12px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;height:100px;" placeholder="공지 내용을 입력하세요..."></textarea>
+      <button class="btn btn-green" style="display:none;margin-top:8px;" id="save-notice-btn" onclick="saveNotice()">저장</button>
+    </div>
+  </div>
+
+  <!-- ── 작업 관리 탭 ── -->
+  <div class="tab-panel" id="panel-tasks">
+    <div class="card">
+      <h3>작업 추가</h3>
+      <div class="task-form">
+        <input type="text" id="task-input" placeholder="새 작업 내용 입력..." maxlength="60"/>
+        <select id="priority-select">
+          <option value="high">높음 🔴</option>
+          <option value="medium" selected>중간 🟡</option>
+          <option value="low">낮음 🟢</option>
+        </select>
+        <button class="btn btn-red" id="add-task-btn" onclick="addTask()">추가</button>
+      </div>
+      <p class="shortcut-hint">단축키: <kbd>Enter</kbd> 로 빠르게 추가</p>
+    </div>
+
+    <div class="card">
+      <h3>작업 목록</h3>
+      <div class="filter-row" id="filter-row">
+        <button class="filter-btn active" data-filter="all"    onclick="filterTasks(this)">전체</button>
+        <button class="filter-btn"        data-filter="high"   onclick="filterTasks(this)">높음</button>
+        <button class="filter-btn"        data-filter="medium" onclick="filterTasks(this)">중간</button>
+        <button class="filter-btn"        data-filter="low"    onclick="filterTasks(this)">낮음</button>
+        <button class="filter-btn"        data-filter="done"   onclick="filterTasks(this)">완료됨</button>
+      </div>
+      <ul id="task-list"></ul>
+      <p id="empty-msg">등록된 작업이 없습니다.</p>
+      <div class="progress-wrap" id="progress-wrap" style="display:none">
+        <div class="progress-label">
+          <span>진행률</span><span id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FAQ 탭 ── -->
+  <div class="tab-panel" id="panel-faq">
+    <div class="card">
+      <h3>자주 묻는 질문</h3>
+      <div id="accordion-wrap">
+        <div class="accordion-item" id="faq-1">
+          <button class="accordion-header" onclick="toggleAccordion('faq-1')">
+            Playwright와 Selenium의 차이점은 무엇인가요?
+            <span class="accordion-icon">+</span>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-body-inner" id="faq-1-body">
+              Playwright는 Microsoft에서 만든 최신 테스트 프레임워크로, 브라우저를 직접 제어하고 네트워크 인터셉트, 자동 대기 등 현대적인 기능을 기본 제공합니다. Selenium은 오래된 생태계를 가지며 다양한 언어를 지원합니다.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item" id="faq-2">
+          <button class="accordion-header" onclick="toggleAccordion('faq-2')">
+            자동화 테스트를 시작하려면 무엇을 배워야 하나요?
+            <span class="accordion-icon">+</span>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-body-inner" id="faq-2-body">
+              Python 기초 문법 → Selenium/Playwright 기본 동작 → CSS/XPath 셀렉터 → 테스트 설계(TC 작성) 순서로 학습하는 것을 권장합니다. CI/CD 연동은 이후 단계입니다.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item" id="faq-3">
+          <button class="accordion-header" onclick="toggleAccordion('faq-3')">
+            Page Object Model(POM)이란 무엇인가요?
+            <span class="accordion-icon">+</span>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-body-inner" id="faq-3-body">
+              페이지의 요소와 동작을 클래스로 분리하는 디자인 패턴입니다. UI가 바뀌어도 해당 페이지 클래스만 수정하면 되므로 유지보수성이 크게 향상됩니다.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item" id="faq-4">
+          <button class="accordion-header" onclick="toggleAccordion('faq-4')">
+            Headless 모드란 무엇인가요?
+            <span class="accordion-icon">+</span>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-body-inner" id="faq-4-body">
+              Headless 모드란 브라우저 UI 없이 백그라운드에서 실행하는 방식입니다. CI 서버처럼 화면이 없는 환경에서 유용하며 실행 속도가 빠릅니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 통계 탭 ── -->
+  <div class="tab-panel" id="panel-stats">
+    <div class="card">
+      <h3>작업 현황 차트</h3>
+      <div class="chart-row">
+        <div class="chart-box">
+          <h4>우선순위별 작업</h4>
+          <div class="bar-chart" id="priority-chart">
+            <div class="bar-row"><span class="bar-label">높음</span><div class="bar-track"><div class="bar-fill" id="bar-high" style="width:25%;background:#fc8181"></div></div><span class="bar-val" id="bar-high-val">3</span></div>
+            <div class="bar-row"><span class="bar-label">중간</span><div class="bar-track"><div class="bar-fill" id="bar-medium" style="width:50%;background:#f6ad55"></div></div><span class="bar-val" id="bar-medium-val">6</span></div>
+            <div class="bar-row"><span class="bar-label">낮음</span><div class="bar-track"><div class="bar-fill" id="bar-low" style="width:25%;background:#68d391"></div></div><span class="bar-val" id="bar-low-val">3</span></div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h4>완료율</h4>
+          <div style="text-align:center;padding:20px 0;">
+            <div style="font-size:3rem;font-weight:800;color:#38a169;" id="completion-rate">58%</div>
+            <div style="font-size:0.82rem;color:#a0aec0;margin-top:4px;">7 / 12 완료</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>API 응답 테스트</h3>
+      <p style="font-size:0.85rem;color:#718096;margin-bottom:14px;">아래 버튼을 누르면 JSONPlaceholder API를 호출합니다. (Playwright route 인터셉트 연습용)</p>
+      <button class="btn btn-blue" id="fetch-api-btn" onclick="fetchApi()">API 호출</button>
+      <div id="api-result" style="margin-top:14px;font-size:0.83rem;padding:12px;background:#f7fafc;border-radius:8px;display:none;"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div id="toast-container"></div>
+
+<footer>Playwright Demo · QA Portfolio</footer>
+
+<script>
+// ── 탭 전환 ───────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── 공지 수정 ─────────────────────────────────
+function toggleEditNotice() {
+  const editor = document.getElementById('notice-editor');
+  const saveBtn = document.getElementById('save-notice-btn');
+  const editBtn = document.getElementById('edit-notice-btn');
+  const isHidden = editor.style.display === 'none';
+  editor.style.display = isHidden ? 'block' : 'none';
+  saveBtn.style.display = isHidden ? 'inline-block' : 'none';
+  editBtn.textContent = isHidden ? '취소' : '공지 수정';
+  if (isHidden) editor.value = document.getElementById('notice-text').innerText.trim();
+}
+function saveNotice() {
+  const val = document.getElementById('notice-editor').value.trim();
+  if (!val) return;
+  document.getElementById('notice-text').textContent = val;
+  document.getElementById('notice-editor').style.display = 'none';
+  document.getElementById('save-notice-btn').style.display = 'none';
+  document.getElementById('edit-notice-btn').textContent = '공지 수정';
+  showToast('공지가 저장되었습니다.', 'success');
+}
+
+// ── 작업 관리 ─────────────────────────────────
+let tasks = [];
+let taskId = 0;
+
+document.getElementById('task-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
+
+function addTask() {
+  const input = document.getElementById('task-input');
+  const priority = document.getElementById('priority-select').value;
+  const text = input.value.trim();
+  if (!text) { showToast('작업 내용을 입력해주세요.', 'error'); return; }
+  taskId++;
+  tasks.push({ id: taskId, text, priority, done: false });
+  input.value = '';
+  renderTasks();
+  showToast(`작업이 추가되었습니다.`, 'success');
+}
+
+function toggleTask(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; renderTasks(); }
+}
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  renderTasks();
+  showToast('작업이 삭제되었습니다.', 'info');
+}
+
+let currentFilter = 'all';
+function filterTasks(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.filter;
+  renderTasks();
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  const emptyMsg = document.getElementById('empty-msg');
+  const progressWrap = document.getElementById('progress-wrap');
+
+  let filtered = tasks.filter(t => {
+    if (currentFilter === 'all')  return true;
+    if (currentFilter === 'done') return t.done;
+    return t.priority === currentFilter && !t.done;
+  });
+
+  list.innerHTML = '';
+  if (filtered.length === 0) {
+    emptyMsg.style.display = 'block';
+    progressWrap.style.display = 'none';
+  } else {
+    emptyMsg.style.display = 'none';
+    progressWrap.style.display = 'block';
+    filtered.forEach(t => {
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      li.setAttribute('data-id', t.id);
+      li.setAttribute('data-priority', t.priority);
+      li.setAttribute('data-done', t.done);
+      li.innerHTML = `
+        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})"/>
+        <span class="task-text ${t.done ? 'done' : ''}">${t.text}</span>
+        <span class="priority-tag p-${t.priority}">${{high:'높음',medium:'중간',low:'낮음'}[t.priority]}</span>
+        <button class="del-btn" onclick="deleteTask(${t.id})" title="삭제">✕</button>
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  const done  = tasks.filter(t => t.done).length;
+  const total = tasks.length;
+  const pct   = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent  = pct + '%';
+}
+
+// ── 아코디언 ──────────────────────────────────
+function toggleAccordion(id) {
+  const item = document.getElementById(id);
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+// ── API 호출 ──────────────────────────────────
+function fetchApi() {
+  const btn = document.getElementById('fetch-api-btn');
+  const result = document.getElementById('api-result');
+  btn.textContent = '로딩 중...';
+  btn.disabled = true;
+  fetch('https://jsonplaceholder.typicode.com/todos/1')
+    .then(r => r.json())
+    .then(data => {
+      result.style.display = 'block';
+      result.innerHTML = `<strong>응답 성공</strong><br>ID: ${data.id} | 제목: ${data.title} | 완료: ${data.completed}`;
+      result.setAttribute('data-loaded', 'true');
+      showToast('API 응답 성공!', 'success');
+    })
+    .catch(() => {
+      result.style.display = 'block';
+      result.textContent = '네트워크 오류가 발생했습니다.';
+      result.setAttribute('data-loaded', 'error');
+    })
+    .finally(() => { btn.textContent = 'API 호출'; btn.disabled = false; });
+}
+
+// ── 토스트 ────────────────────────────────────
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.id = `toast-${Date.now()}`;
+  el.setAttribute('data-type', type);
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+</script>
+</body>
+</html>

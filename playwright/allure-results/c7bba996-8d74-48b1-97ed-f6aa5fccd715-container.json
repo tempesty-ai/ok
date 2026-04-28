@@ -1,0 +1,1 @@
+{"uuid": "b3468a46-cbca-4c85-b75a-0332616cfecb", "children": ["c41dae4c-fa96-4b11-a9b8-b04ed7a9b93c"], "befores": [{"name": "stats_page", "status": "passed", "steps": [{"name": "'통계' 탭 클릭", "status": "passed", "start": 1777392940640, "stop": 1777392940755}], "start": 1777392940640, "stop": 1777392940755}], "start": 1777392940640, "stop": 1777392940766}

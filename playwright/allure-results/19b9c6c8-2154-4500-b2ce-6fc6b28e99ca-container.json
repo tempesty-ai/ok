@@ -1,0 +1,1 @@
+{"uuid": "85992fed-3f04-47bf-86d3-7f0cb50e6da9", "children": ["e6bbf971-b2b7-4930-af65-2766d93836a0"], "befores": [{"name": "faq_page", "status": "passed", "steps": [{"name": "'FAQ' 탭 클릭", "status": "passed", "start": 1777392941330, "stop": 1777392941439}], "start": 1777392941329, "stop": 1777392941439}], "start": 1777392941329, "stop": 1777392941650}

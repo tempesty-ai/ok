@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QA Selenium 데모 페이지</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #333; }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white;
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.4rem; letter-spacing: 1px; }
+    header span { font-size: 0.85rem; opacity: 0.7; }
+
+    .container { max-width: 960px; margin: 40px auto; padding: 0 20px; }
+
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e8edf2;
+    }
+    .badge {
+      display: inline-block;
+      background: #e8f4fd;
+      color: #1565c0;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    /* 로그인 폼 */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #dde3ea;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #4c9be8;
+      box-shadow: 0 0 0 3px rgba(76,155,232,0.15);
+    }
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #1565c0; color: white; }
+    .btn-primary:hover { background: #0d47a1; }
+    .btn-danger { background: #c62828; color: white; margin-left: 8px; }
+    .btn-success { background: #2e7d32; color: white; }
+    #login-result {
+      margin-top: 14px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .msg-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .msg-error   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+
+    /* 검색 & 테이블 */
+    .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .search-row input { flex: 1; padding: 9px 14px; border: 1px solid #dde3ea; border-radius: 8px; font-size: 0.88rem; }
+    #user-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    #user-table th { background: #f5f7fa; text-align: left; padding: 10px 14px; color: #555; font-weight: 600; border-bottom: 2px solid #e8edf2; }
+    #user-table td { padding: 10px 14px; border-bottom: 1px solid #f0f4f8; }
+    #user-table tr:hover td { background: #f9fbff; }
+    .status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .status-active  { background: #e8f5e9; color: #2e7d32; }
+    .status-inactive{ background: #fff3e0; color: #e65100; }
+
+    /* 드롭다운 + 체크박스 */
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
+    .checkbox-list label { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; cursor: pointer; }
+    .checkbox-list input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+    #dropdown-result, #checkbox-result {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      color: #1565c0;
+      min-height: 20px;
+    }
+
+    /* 모달 */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 14px;
+      padding: 32px;
+      width: 380px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    }
+    .modal h3 { font-size: 1.1rem; margin-bottom: 12px; }
+    .modal p  { font-size: 0.88rem; color: #555; margin-bottom: 24px; }
+    .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* 동적 콘텐츠 */
+    .dynamic-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    #dynamic-area {
+      margin-top: 16px;
+      min-height: 54px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #f5f7fa;
+      font-size: 0.88rem;
+      color: #333;
+      transition: all 0.3s;
+    }
+    #counter-display {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1565c0;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    /* 드래그 앤 드롭 */
+    .drag-container { display: flex; gap: 16px; }
+    .drag-box {
+      flex: 1;
+      min-height: 100px;
+      border: 2px dashed #c5cfe0;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .drag-box h4 { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
+    .drag-item {
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      cursor: grab;
+      margin-bottom: 8px;
+      user-select: none;
+    }
+    .drag-item:active { cursor: grabbing; }
+    .drag-box.drag-over { border-color: #1565c0; background: #f0f7ff; }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🧪 QA Selenium Demo</h1>
+  <span>포트폴리오용 테스트 페이지 · selenium_demo v1.0</span>
+</header>
+
+<div class="container">
+
+  <!-- ① 로그인 폼 -->
+  <div class="section">
+    <h2>① 로그인 폼 <span class="badge">form / input / button</span></h2>
+    <div class="form-group">
+      <label for="username">아이디</label>
+      <input type="text" id="username" name="username" placeholder="admin" autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" name="password" placeholder="••••••"/>
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">로그인</button>
+    <button class="btn btn-danger" id="reset-btn" onclick="resetLogin()">초기화</button>
+    <div id="login-result"></div>
+  </div>
+
+  <!-- ② 검색 + 테이블 -->
+  <div class="section">
+    <h2>② 검색 & 데이터 테이블 <span class="badge">table / search / filter</span></h2>
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="이름 또는 역할 검색..." oninput="filterTable()"/>
+      <button class="btn btn-primary" id="search-btn" onclick="filterTable()">검색</button>
+    </div>
+    <table id="user-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>이름</th><th>역할</th><th>부서</th><th>상태</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr data-id="1"><td>001</td><td>김민준</td><td>QA Engineer</td><td>품질보증팀</td><td><span class="status-badge status-active">활성</span></td></tr>
+        <tr data-id="2"><td>002</td><td>이서연</td><td>Developer</td><td>개발팀</td><td><span class="status-badge status-active">활성</span></td></tr>
+        <tr data-id="3"><td>003</td><td>박지호</td><td>PM</td><td>기획팀</td><td><span class="status-badge status-inactive">비활성</span></td></tr>
+        <tr data-id="4"><td>004</td><td>최수아</td><td>Designer</td><td>디자인팀</td><td><span class="status-badge status-active">활성</span></td></tr>
+        <tr data-id="5"><td>005</td><td>정우진</td><td>QA Lead</td><td>품질보증팀</td><td><span class="status-badge status-active">활성</span></td></tr>
+      </tbody>
+    </table>
+    <p id="table-count" style="margin-top:10px;font-size:0.8rem;color:#888;"></p>
+  </div>
+
+  <!-- ③ 드롭다운 & 체크박스 -->
+  <div class="section">
+    <h2>③ 드롭다운 & 체크박스 <span class="badge">select / checkbox</span></h2>
+    <div class="options-grid">
+      <div>
+        <div class="form-group">
+          <label for="role-select">역할 선택</label>
+          <select id="role-select" onchange="showDropdown()">
+            <option value="">-- 선택하세요 --</option>
+            <option value="qa">QA Engineer</option>
+            <option value="dev">Developer</option>
+            <option value="pm">Project Manager</option>
+            <option value="design">Designer</option>
+          </select>
+        </div>
+        <div id="dropdown-result"></div>
+      </div>
+      <div>
+        <p style="font-size:0.85rem;color:#555;margin-bottom:10px;">테스트 항목 선택</p>
+        <div class="checkbox-list">
+          <label><input type="checkbox" id="chk-functional" value="functional" onchange="showCheckbox()"/> 기능 테스트</label>
+          <label><input type="checkbox" id="chk-regression" value="regression" onchange="showCheckbox()"/> 회귀 테스트</label>
+          <label><input type="checkbox" id="chk-performance" value="performance" onchange="showCheckbox()"/> 성능 테스트</label>
+          <label><input type="checkbox" id="chk-security" value="security" onchange="showCheckbox()"/> 보안 테스트</label>
+        </div>
+        <div id="checkbox-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 모달 팝업 -->
+  <div class="section">
+    <h2>④ 모달 팝업 <span class="badge">modal / dialog</span></h2>
+    <button class="btn btn-primary" id="open-modal-btn" onclick="openModal()">모달 열기</button>
+    <p id="modal-action-result" style="margin-top:14px;font-size:0.85rem;color:#1565c0;"></p>
+  </div>
+
+  <!-- ⑤ 동적 콘텐츠 & 카운터 -->
+  <div class="section">
+    <h2>⑤ 동적 콘텐츠 & 카운터 <span class="badge">dynamic / wait / AJAX</span></h2>
+    <div class="dynamic-btns">
+      <button class="btn btn-primary" id="load-content-btn" onclick="loadContent()">콘텐츠 로드 (지연)</button>
+      <button class="btn btn-success" id="count-up-btn" onclick="countUp()">카운터 +1</button>
+      <button class="btn btn-danger"  id="count-reset-btn" onclick="resetCounter()">리셋</button>
+    </div>
+    <div id="dynamic-area">
+      <div id="counter-display" style="display:none"></div>
+      <span id="dynamic-text">버튼을 클릭하면 결과가 여기 표시됩니다.</span>
+    </div>
+  </div>
+
+  <!-- ⑥ 드래그 앤 드롭 -->
+  <div class="section">
+    <h2>⑥ 드래그 앤 드롭 <span class="badge">drag &amp; drop</span></h2>
+    <div class="drag-container">
+      <div class="drag-box" id="drag-source" ondragover="allowDrop(event)" ondrop="dropItem(event,'drag-source')">
+        <h4>대기 항목</h4>
+        <div class="drag-item" id="item-a" draggable="true" ondragstart="dragStart(event)">🔴 긴급 버그</div>
+        <div class="drag-item" id="item-b" draggable="true" ondragstart="dragStart(event)">🟡 UI 개선</div>
+        <div class="drag-item" id="item-c" draggable="true" ondragstart="dragStart(event)">🟢 문서 업데이트</div>
+      </div>
+      <div class="drag-box" id="drag-target" ondragover="allowDrop(event)" ondrop="dropItem(event,'drag-target')">
+        <h4>완료 항목</h4>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- 모달 -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal-box" role="dialog" aria-modal="true">
+    <h3>⚠️ 확인이 필요합니다</h3>
+    <p>이 작업을 진행하면 선택한 데이터가 삭제됩니다. 계속하시겠습니까?</p>
+    <div class="modal-btns">
+      <button class="btn btn-primary" id="modal-confirm-btn" onclick="confirmModal()">확인</button>
+      <button class="btn btn-danger"  id="modal-cancel-btn"  onclick="closeModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<footer>QA Portfolio Demo · Selenium 기본 동작 테스트 페이지</footer>
+
+<script>
+  // ① 로그인
+  function doLogin() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value.trim();
+    const el = document.getElementById('login-result');
+    el.style.display = 'block';
+    if (u === 'admin' && p === 'qa1234') {
+      el.className = 'msg-success';
+      el.id = 'login-result';
+      el.textContent = '✅ 로그인 성공! 환영합니다, admin님.';
+      el.setAttribute('data-result', 'success');
+    } else {
+      el.className = 'msg-error';
+      el.textContent = '❌ 아이디 또는 비밀번호가 올바르지 않습니다.';
+      el.setAttribute('data-result', 'fail');
+    }
+  }
+  function resetLogin() {
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    const el = document.getElementById('login-result');
+    el.style.display = 'none';
+    el.textContent = '';
+  }
+
+  // ② 테이블 필터
+  function filterTable() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const rows = document.querySelectorAll('#table-body tr');
+    let visible = 0;
+    rows.forEach(r => {
+      const match = r.textContent.toLowerCase().includes(q);
+      r.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    document.getElementById('table-count').textContent = `검색 결과: ${visible}건`;
+  }
+  filterTable();
+
+  // ③ 드롭다운
+  const roleLabels = { qa:'QA Engineer', dev:'Developer', pm:'Project Manager', design:'Designer' };
+  function showDropdown() {
+    const v = document.getElementById('role-select').value;
+    document.getElementById('dropdown-result').textContent = v ? `선택된 역할: ${roleLabels[v]}` : '';
+  }
+  function showCheckbox() {
+    const checked = [...document.querySelectorAll('.checkbox-list input:checked')].map(c => c.nextSibling.textContent.trim());
+    document.getElementById('checkbox-result').textContent = checked.length ? '선택: ' + checked.join(', ') : '';
+  }
+
+  // ④ 모달
+  function openModal()    { document.getElementById('modal-backdrop').classList.add('open'); }
+  function closeModal()   {
+    document.getElementById('modal-backdrop').classList.remove('open');
+    document.getElementById('modal-action-result').textContent = '취소했습니다.';
+    document.getElementById('modal-action-result').setAttribute('data-result','cancel');
+  }
+  function confirmModal() {
+    document.getElementById('modal-backdrop').classList.remove('open');
+    document.getElementById('modal-action-result').textContent = '✅ 확인을 눌렀습니다. 데이터가 삭제되었습니다.';
+    document.getElementById('modal-action-result').setAttribute('data-result','confirmed');
+  }
+
+  // ⑤ 동적 / 카운터
+  let counter = 0;
+  function loadContent() {
+    const area = document.getElementById('dynamic-area');
+    document.getElementById('dynamic-text').textContent = '⏳ 로딩 중...';
+    document.getElementById('counter-display').style.display = 'none';
+    setTimeout(() => {
+      document.getElementById('dynamic-text').textContent = '✅ 콘텐츠가 로드되었습니다! (id=dynamic-loaded)';
+      area.setAttribute('data-loaded','true');
+      const span = document.createElement('span');
+      span.id = 'dynamic-loaded';
+      span.textContent = ' [loaded]';
+      span.style.color = '#2e7d32';
+      document.getElementById('dynamic-text').appendChild(span);
+    }, 1500);
+  }
+  function countUp() {
+    counter++;
+    document.getElementById('dynamic-text').textContent = '';
+    const disp = document.getElementById('counter-display');
+    disp.style.display = 'block';
+    disp.textContent = counter;
+    disp.setAttribute('data-count', counter);
+  }
+  function resetCounter() {
+    counter = 0;
+    document.getElementById('counter-display').style.display = 'none';
+    document.getElementById('dynamic-text').textContent = '카운터가 초기화되었습니다.';
+  }
+
+  // ⑥ 드래그 앤 드롭
+  let draggedId = null;
+  function dragStart(e) { draggedId = e.target.id; }
+  function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+  function dropItem(e, boxId) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (draggedId) {
+      document.getElementById(boxId).appendChild(document.getElementById(draggedId));
+      draggedId = null;
+    }
+  }
+  document.querySelectorAll('.drag-box').forEach(b => b.addEventListener('dragleave', () => b.classList.remove('drag-over')));
+</script>
+</body>
+</html>
