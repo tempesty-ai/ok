@@ -84,10 +84,12 @@ log("실패 메시지 표시",         result_el.is_displayed())
 log("실패 data-result 값 확인", result_el.get_attribute("data-result") == "fail",
     result_el.get_attribute("data-result"))
 
-log("초기화 버튼 동작 확인",
-    driver.find_element(By.ID, "username").get_attribute("value") != "" or True)
-
 driver.find_element(By.ID, "reset-btn").click()
+time.sleep(0.2)
+log("초기화 버튼 동작 확인",
+    driver.find_element(By.ID, "username").get_attribute("value") == ""
+    and driver.find_element(By.ID, "password").get_attribute("value") == ""
+    and not driver.find_element(By.ID, "login-result").is_displayed())
 
 
 print("\n[TC-03] 테이블 검색 필터")

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+
+# Generated test artifacts
+allure-results/
+test-results/
+playwright-report/
+screenshots/
+
+# Local environments
+.venv/
+venv/
+.env

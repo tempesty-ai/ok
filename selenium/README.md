@@ -34,6 +34,25 @@ Selenium을 활용해 핵심 사용자 플로우의 회귀 리스크를 빠르�
 - 카운터 반복 클릭
 - 드래그 앤 드롭
 
+## 테스트 케이스 상세
+| ID | 시나리오 | 검증 포인트 | 사용 기능 |
+|---|---|---|---|
+| TC-01 | 로그인 성공 | 정상 계정 입력 시 성공 메시지가 노출되고 `data-result=success` 상태가 기록되는지 확인 | input, button, explicit wait, attribute |
+| TC-02 | 로그인 실패/초기화 | 잘못된 비밀번호 입력 시 실패 상태가 표시되고, 초기화 버튼으로 입력값/결과 메시지가 정리되는지 확인 | negative case, reset flow, visibility |
+| TC-03 | 테이블 검색 필터 | `QA`, `비활성` 키워드 검색 시 표시 행 개수가 기대값과 일치하는지 확인 | keyboard input, table filtering |
+| TC-04 | 테이블 행 데이터 검증 | 첫 번째 행의 이름/역할/상태 데이터가 기대값과 일치하는지 확인 | table row/cell assertion |
+| TC-05 | 드롭다운 선택 | value, visible text, index 방식으로 선택했을 때 결과 영역이 올바르게 갱신되는지 확인 | `Select`, option handling |
+| TC-06 | 체크박스 다중 선택 | 여러 체크박스 선택 결과가 반영되고, 해제 시 결과에서 제거되는지 확인 | checkbox state, multi-select |
+| TC-07 | 모달 팝업 | 모달 열림/닫힘, 확인/취소 버튼의 결과 상태가 각각 기록되는지 확인 | modal, click action, data attribute |
+| TC-08 | 동적 콘텐츠 로드 | 로딩 문구 이후 동적 요소가 생성되고 `data-loaded=true` 상태가 되는지 확인 | `WebDriverWait`, dynamic DOM |
+| TC-09 | 카운터 반복 클릭 | 버튼 5회 클릭 후 카운터 값이 5가 되고, 리셋 시 표시 영역이 숨겨지는지 확인 | repeated click, state reset |
+| TC-10 | 드래그 앤 드롭 | 드래그 전 항목 위치와 드롭 후 target 영역 이동 여부를 확인 | `ActionChains`, drag and drop |
+
+## 케이스 선정 기준
+- 배포 전 빠르게 확인해야 하는 핵심 UI 동작을 우선 선정
+- 입력, 선택, 검색, 모달, 동적 로딩처럼 실제 서비스 회귀에서 자주 깨지는 상호작용을 포함
+- Selenium 학습 목적에 맞게 Locator, Wait, Select, ActionChains를 한 번씩 경험할 수 있도록 구성
+
 ## 실행 방법
 ```bash
 cd selenium
@@ -45,3 +64,8 @@ python test_demo.py
 - 배포 전 스모크 회귀 체크
 - 재현 가능한 결함 확인 절차 표준화
 - 기본 플로우 실패 시 릴리즈 게이트 근거로 활용
+
+## 개선/학습 포인트
+- 단순 `sleep`은 데모 안정성을 위해 일부만 사용하고, 실제 검증은 `WebDriverWait` 중심으로 구성
+- 실패 원인을 빠르게 볼 수 있도록 각 케이스를 PASS/FAIL 로그로 분리
+- 대규모 회귀 테스트로 확장할 경우 pytest fixture와 Page Object 구조로 분리 가능

@@ -30,6 +30,27 @@
 - `selenium/README.md`: Selenium 기반 시나리오
 - `playwright/README.md`: Playwright 기반 시나리오
 
+## 빠른 실행
+페이지를 눈으로 확인:
+```bat
+open_selenium_demo.bat
+open_playwright_demo.bat
+```
+
+자동화 테스트 실행:
+```bat
+run_selenium_tests.bat
+run_playwright_tests.bat
+run_playwright_headed.bat
+```
+
+테스트 실행에는 Python 3.10+가 필요합니다. Python이 없으면 스크립트가 설치 안내를 출력합니다.
+
+## 제출 포인트
+- Selenium은 한 파일에서 핵심 UI 상호작용을 빠르게 확인하는 스모크 성격으로 구성
+- Playwright는 pytest, fixture, Page Object, marker, API mocking까지 포함해 유지보수 관점을 반영
+- 실행 산출물은 저장소에서 제외하고, 재현 가능한 테스트 코드와 README 중심으로 정리
+
 ## 운영 메모
 - 자동화 커버리지 자체보다 릴리즈 안정성 향상에 집중
 - 테스트 코드는 팀 의사결정을 돕는 품질 증거로 사용

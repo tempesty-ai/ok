@@ -1,1 +1,0 @@
-{"uuid": "19bcd554-b6ed-4f55-ab12-7d46a62a3656", "children": ["54c69623-1193-4197-9620-2c78b6285e62"], "befores": [{"name": "task_page", "status": "passed", "steps": [{"name": "'작업 관리' 탭 클릭", "status": "passed", "start": 1777393270538, "stop": 1777393271240}], "start": 1777393270538, "stop": 1777393271240}], "start": 1777393270538, "stop": 1777393273129}

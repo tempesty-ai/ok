@@ -1,17 +1,44 @@
 ﻿import re                          # 정규표현식 (텍스트 패턴 비교에 사용)
+import sys                         # 직접 실행 시 CLI 옵션 전달에 사용
 import pytest                      # 파이썬 테스트 프레임워크
 from pathlib import Path           # 파일 경로를 다루는 모듈
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, expect, sync_playwright
 
 
 PAGE_URL = "file:///" + str(Path(__file__).parent / "demo_page.html").replace("\\", "/")
 
 
-@pytest.fixture()
-def page(page: Page):
-    page.goto(PAGE_URL)   # 브라우저로 데모 페이지 열기
-    return page           # 준비된 page 객체를 테스트 함수에 전달
+def pytest_addoption(parser):
+    parser.addoption("--headed", action="store_true", help="브라우저 창을 띄워서 실행")
+    parser.addoption("--slowmo", action="store", type=int, default=0, help="동작 사이 지연(ms)")
 
+
+@pytest.fixture(scope="session")
+def browser(request):
+    """Chromium은 한 번만 띄워서 단일 파일 실행 속도를 안정화한다."""
+    headed = request.config.getoption("--headed", default=False)
+    slowmo = request.config.getoption("--slowmo", default=0)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=not headed, slow_mo=slowmo)
+        yield browser
+        browser.close()
+
+
+@pytest.fixture(scope="session")
+def shared_page(browser):
+    page = browser.new_page()
+    page.set_default_timeout(5000)
+    yield page
+    page.close()
+
+
+@pytest.fixture()
+def page(shared_page):
+    # 시연 중 브라우저/탭을 계속 새로 열지 않고, 테스트마다 화면 상태만 초기화한다.
+    if hasattr(shared_page, "unroute_all"):
+        shared_page.unroute_all()
+    shared_page.goto(PAGE_URL)
+    yield shared_page
 
 def test_tab_switch_click(page: Page):
     page.get_by_role("button", name="작업 관리").click()
@@ -302,4 +329,8 @@ def test_stat_card_numbers(page: Page):
 
     for selector, expected in checks:
         expect(page.locator(selector)).to_have_text(expected)
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-v", *sys.argv[1:]]))
 
