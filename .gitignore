@@ -11,3 +11,11 @@ screenshots/
 .venv/
 venv/
 .env
+
+*.pyo
+.pytest_cache/
+allure-report/
+.DS_Store
+.idea/
+.vscode/
+.env.*
