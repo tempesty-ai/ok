@@ -1,147 +1,149 @@
-# Senior QA Engineer 포트폴리오 - Web 자동화 기반
+# `ok` — UI 회귀 자동화 기반 (Selenium × Playwright)
 
-> 회귀 리스크를 줄이기 위한 실무형 UI 자동화 기반을 정리한 저장소입니다.
-> 핵심은 자동화 자체가 아니라, QA가 무엇을 자동화할 가치가 있는지 판단하는 방식입니다.
+> 자동화 전담 포지션보다는 **릴리즈 품질과 리스크 관리**를 중심으로 하는 시니어 QA 포트폴리오입니다.
+> 핵심은 "프레임워크를 얼마나 깊게 만드느냐"가 아니라, **"어떤 흐름을 자동화 대상으로 고르고, 어떻게 회귀 리스크를 줄일지 판단하느냐"** 입니다.
 
-## 데이터 안내
+---
 
-이 저장소의 테스트 시나리오, selector, 검증 기준은 `practicesoftwaretesting.com` 같은 공개 데모 사이트를 기반으로 합니다. 현재 또는 과거 회사/고객사 시스템의 화면, 데이터, selector, 내부 명세는 포함하지 않습니다.
+## 한 줄 가치
 
-## 문제
+> **"무엇을 자동화할 것인가?"** 라는 질문에 위험도 기반으로 답하는 기반 저장소.
 
-릴리즈 전 수동 회귀 점검은 시간이 오래 걸리고 사람마다 결과가 달라질 수 있습니다. 반대로 모든 화면을 자동화하는 것도 비용이 크고 가치가 낮은 경우가 많습니다.
-
-이 저장소는 리스크 기반 접근을 보여줍니다. 반복적이고 영향도가 높은 핵심 사용자 흐름은 자동화로 보호하고, 탐색적이거나 불확실한 영역은 사람의 QA 판단 영역으로 남깁니다.
-
-## 포지셔닝
-
-| 영역 | 방향 |
+| 영역 | 요약 |
 | --- | --- |
-| 역할 | 제품 품질 전체를 보는 QA Engineer |
-| 강점 | 요구사항 검토, 테스트 전략, 회귀 범위 선정, 결함 분석, 릴리즈 게이트 |
-| 자동화 활용 | 반복 회귀와 핵심 흐름 보호를 지원 |
-| 범위 | QA 팀이 이해하고 운영할 수 있는 실용적 자동화 |
+| 역할 | 제품 품질 전반을 보는 QA Engineer |
+| 강점 | 요구사항 리뷰, 테스트 전략 수립, 회귀 범위 관리, 결함 분석, 릴리즈 게이트 운영 |
+| 자동화 활용 | 반복 회귀와 핵심 플로우 보호를 위한 보조 수단 |
+| 표현 수준 | 자동화 전담 엔지니어 수준의 과한 구조보다, 실무 QA가 이해하고 운영 가능한 수준 |
 
-## Selenium과 Playwright를 함께 둔 이유
+---
 
-| 폴더 | 목적 | 특징 | 자동화 대상 |
-| --- | --- | --- | --- |
-| `selenium/` | 핵심 UI 흐름 smoke check | 단일 실행 스크립트, WebDriverWait, Select, ActionChains | 주요 진입 흐름 빠른 확인 |
-| `playwright/` | pytest 기반 구조화 회귀 테스트 | Fixtures, Page Object, API mock, screenshots, headed mode | 유지보수성이 필요한 반복 회귀 |
+## 발견한 크리티컬 리스크
 
-어느 도구가 항상 더 좋다는 뜻이 아닙니다. 리스크, 반복 빈도, 유지보수 비용에 따라 도구를 선택하는 것이 핵심입니다.
+이 저장소는 다음 3가지 구조적 리스크에 답하기 위해 만들어졌습니다.
 
-## 테스트 전략
-
-| 영역 | 접근 | 기준 |
+| # | 리스크 | 의미 |
 | --- | --- | --- |
-| 핵심 사용자 흐름 | 자동화 우선 | 회귀 빈도와 실패 영향도가 모두 높음 |
-| 신규 기능 검증 | 수동 및 탐색적 테스트 | 요구사항이나 UX가 아직 불확실함 |
-| UI 상호작용 | 리스크 기반 자동화 | 입력, dropdown, modal, 동적 loading, 반복 검증 |
-| 실패 분석 | 증거 수집 | 빠른 진단을 위한 screenshot, log, state 값 |
+| R1 | **반복 회귀 누락** | 매 릴리즈마다 동일한 핵심 UI 플로우(로그인·검색·모달·동적 로딩)를 사람 손으로 확인하면, 회귀가 누락되는 사고가 반복됨 |
+| R2 | **자동화 과잉** | "모든 기능을 자동화한다"는 접근은 유지보수 비용을 폭발시키고, 실패 분석 시간이 늘어나 자동화 자체의 신뢰가 깨짐 |
+| R3 | **실패 분석 지연** | 자동화가 깨졌을 때 원인을 빠르게 못 찾으면, 자동화는 곧 죽은 코드가 됨 |
 
-## Selenium 케이스
+→ 그래서 이 저장소는 자동화 **선별 기준**과 **실패 분석 가능성**을 함께 갖춘 형태로 설계되었습니다.
+
+---
+
+## 테스트 설계
+
+### 자동화 우선순위 결정
+
+| 영역 | 접근 방식 | 기준 |
+| --- | --- | --- |
+| 핵심 사용자 플로우 | **자동화 우선** | 회귀 빈도가 높고 실패 영향이 큰 기능 |
+| 신규 기능 초기 검증 | 수동 + 탐색 테스트 | 요구사항 불확실성이 높고 UX 확인이 필요한 구간 |
+| UI 상호작용 | **위험도 기반 선별 자동화** | 입력, 선택, 모달, 동적 로딩처럼 반복 검증이 많은 영역 |
+| 실패 분석 | 로그/스크린샷/상태값 확인 | 실패 원인을 빠르게 공유할 수 있는 증거 확보 |
+
+### 계층 분리 — 두 폴더의 역할이 다름
+
+| 폴더 | 성격 | 특징 |
+| --- | --- | --- |
+| `selenium/` | **스모크**: 핵심 UI 플로우를 빠르게 한 번 통과 | 단일 실행 파일, WebDriverWait, Select, ActionChains 중심 |
+| `playwright/` | **구조화 회귀**: pytest 기반 유지보수형 회귀 | fixture, Page Object, API mock, screenshot, headed 실행 지원 |
+
+상세 케이스 설명은 각 폴더 README 참고.
+- `selenium/README.md`: Selenium TC-01 ~ TC-10
+- `playwright/README.md`: Playwright PW-01 ~ PW-24
+
+### Selenium 케이스 요약
 
 | ID | 시나리오 | 검증 의도 |
 | --- | --- | --- |
-| TC-01 | 로그인 성공 | 기대 성공 상태 확인 |
-| TC-02 | 로그인 실패/reset | 잘못된 입력과 reset 동작 확인 |
-| TC-03 | 테이블 검색 필터 | 표시된 행이 키워드와 일치하는지 확인 |
-| TC-04 | 테이블 행 데이터 | 주요 cell 값이 기대값과 일치하는지 확인 |
-| TC-05 | Dropdown 선택 | value/text/index 선택 동작 확인 |
-| TC-06 | 다중 checkbox | 선택 및 해제 상태 확인 |
-| TC-07 | Modal popup | 열기, 닫기, 확인, 취소 상태 확인 |
-| TC-08 | 동적 콘텐츠 로딩 | 생성된 DOM에 대한 explicit wait 확인 |
-| TC-09 | Counter 클릭 | 반복 동작과 reset 상태 확인 |
-| TC-10 | Drag and drop | ActionChains 이동 결과 확인 |
+| TC-01 | 로그인 성공 | 정상 계정 입력 시 성공 메시지·상태값 |
+| TC-02 | 로그인 실패/초기화 | 잘못된 입력과 reset 동작 |
+| TC-03 | 테이블 검색 필터 | 키워드 입력에 따른 표시 행 개수 |
+| TC-04 | 테이블 행 데이터 | 주요 셀 데이터의 기대값 일치 |
+| TC-05 | 드롭다운 선택 | value/text/index 방식 선택 결과 |
+| TC-06 | 체크박스 다중 선택 | 선택/해제 상태와 결과 반영 |
+| TC-07 | 모달 팝업 | 열기/닫기/확인/취소 상태 |
+| TC-08 | 동적 콘텐츠 로드 | Explicit Wait 기반 DOM 생성 |
+| TC-09 | 카운터 반복 클릭 | 반복 액션 후 상태값과 reset |
+| TC-10 | 드래그 앤 드롭 | ActionChains 기반 이동 결과 |
 
-## Playwright 케이스
+### Playwright 케이스 요약
 
 | 영역 | ID | 시나리오 |
 | --- | --- | --- |
-| Navigation | PW-01 to PW-06 | Tab, tooltip, notice, page title |
-| Task Management | PW-07 to PW-15 | 추가, Enter key, empty value, progress, filter, delete |
-| FAQ | PW-16 to PW-18 | Accordion open, single-open 정책, close toggle |
-| API / Network | PW-19 to PW-20 | Mock API response와 aborted request 처리 |
-| Evidence / Stats | PW-21 to PW-24 | Screenshot, tab capture, chart/stat 검증 |
+| Navigation | PW-01 ~ PW-06 | 탭 전환, 툴팁, 공지 수정, 페이지 타이틀 |
+| Task Management | PW-07 ~ PW-15 | 작업 추가, Enter 입력, 빈 값 예외, 완료/진행률, 필터, 삭제 |
+| FAQ | PW-16 ~ PW-18 | 아코디언 열기, 단일 열림 정책, 토글 닫기 |
+| API / Network | PW-19 ~ PW-20 | API 응답 mock, 요청 abort 시 오류 처리 |
+| Evidence / Stats | PW-21 ~ PW-24 | 스크린샷 생성, 탭별 캡처, 차트/통계 카드 값 검증 |
 
-## 결과
+---
 
-| 항목 | 측정 |
+## 자동화의 비즈니스 임팩트
+
+| 임팩트 | 어떻게 발생하는가 |
 | --- | --- |
-| 자동화된 핵심 회귀 케이스 | Selenium 10 + Playwright 24 = 34 cases |
-| 핵심 흐름 회귀 시간 | 수동 약 30분 -> 자동화 약 3~4분 |
-| 실패 증거 | Screenshot, console log, state capture |
-| 유지보수 방식 | Page Object와 fixture 분리 |
+| **릴리즈 안정성 향상** | 핵심 플로우 회귀를 매번 수동 점검하지 않아도 됨 → 회귀 누락으로 인한 고객 영향 사고 감소 |
+| **유지보수 가능한 커버리지** | 위험도 기반 선별로 자동화 자산이 부풀어 오르지 않음 → 자동화 부채(test debt) 통제 |
+| **팀이 공유 가능한 자산** | `.bat` 스크립트로 비-자동화 인력도 브라우저로 직접 확인 가능 → 자동화가 개인 산출물이 아니라 팀 자산이 됨 |
+| **실패 분석 가속화** | 스크린샷 + 상태값 기반 증거 확보로 결함 재현 시간 단축 |
 
-위 값은 저장소 수준의 샘플 측정값이며, 회사 운영 시스템의 결과가 아닙니다.
+> 자동화 커버리지 숫자보다 **릴리즈 안정성 향상**에 집중했습니다. 모든 기능을 자동화하기보다 **반복 회귀 가능성이 높은 기능**을 우선 선정했습니다. 테스트 코드는 팀의 의사결정을 돕는 **품질 증거**라는 관점으로 작성했습니다.
+
+---
 
 ## 빠른 실행
 
-데모 페이지를 수동으로 엽니다.
-
-```bash
+브라우저로 페이지 확인:
+```
 open_selenium_demo.bat
 open_playwright_demo.bat
 ```
 
-자동화를 실행합니다.
-
-```bash
+자동화 테스트 실행:
+```
 run_selenium_tests.bat
 run_playwright_tests.bat
+```
+
+Playwright headed 실행:
+```
 run_playwright_headed.bat
 ```
 
-Playwright를 직접 실행합니다.
-
-```bash
+또는 폴더에서 직접:
+```
 cd playwright
 py test_demo.py --headed --slowmo 800
 ```
 
-## 설정
+## 실행 전 준비
 
-Python 3.10+를 권장합니다.
+Python 3.10 이상.
 
-```bash
+```
 cd selenium
 pip install -r requirements.txt
 python test_demo.py
 
-cd ../playwright
+cd playwright
 pip install -r requirements.txt
 playwright install
 pytest -v
 ```
 
-Allure는 선택 사항입니다. 기본 pytest 흐름은 Allure가 설치되어 있지 않아도 실행할 수 있도록 구성했습니다.
+Allure는 선택 사항이며, 설치되어 있지 않아도 기본 pytest 실행이 막히지 않도록 구성했습니다.
 
-## 운영 메모
+---
 
-- 목표는 자동화 개수가 아니라 릴리즈 안정성입니다.
-- 낮은 가치의 넓은 커버리지보다 반복 회귀 후보를 우선합니다.
-- 테스트 코드는 팀 의사결정을 지원하는 품질 증거로 봅니다.
-- 실행 중 생성되는 산출물은 제외하고, 재현 가능한 코드와 문서만 git에 남깁니다.
+## 제출 포인트
 
-## 로드맵
-
-- API 계층 회귀 케이스 추가
-- 시각적 회귀는 형제 저장소 `UI_Test`에서 관리
-- CI 실패 알림을 형제 프로젝트 `botserver`와 연결
-
-## 저장소 이름 변경 제안
-
-`ok`는 더 명확한 저장소 이름으로 바꾸는 것을 고려할 수 있습니다.
-
-- `qa-automation-portfolio`
-- `web-regression-suite`
-- `ui-automation-foundation`
-
-변경 경로: GitHub web -> Settings -> General -> Repository name -> Rename.
-
-이름을 바꾼 뒤에는 로컬 remote URL을 업데이트합니다.
-
-```bash
-git remote set-url origin https://github.com/tempesty-ai/<new-name>.git
-```
+| 포인트 | 설명 |
+| --- | --- |
+| QA 관점 | 자동화 자체보다 어떤 리스크를 줄이기 위한 테스트인지 드러나도록 구성 |
+| Selenium | 한 파일에서 핵심 UI 상호작용을 빠르게 확인하는 스모크 성격 |
+| Playwright | pytest fixture, Page Object, API mocking, screenshot을 포함해 유지보수 관점 반영 |
+| 실행 편의성 | 루트 batch 파일로 브라우저 확인과 테스트 실행을 바로 할 수 있게 정리 |
+| 저장소 관리 | 실행 산출물은 `.gitignore`로 제외하고 재현 가능한 코드와 문서 중심으로 관리 |
