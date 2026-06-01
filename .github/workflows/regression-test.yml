@@ -36,7 +36,7 @@ jobs:
           cd playwright
           pytest tests/ -v --tb=short \
             --html=report.html --self-contained-html \
-            -n auto || true
+            -n auto
 
       - name: 📁 테스트 리포트 아티팩트 업로드
         uses: actions/upload-artifact@v4
@@ -70,7 +70,7 @@ jobs:
       - name: 🔥 Selenium 스모크 테스트 실행
         run: |
           cd selenium
-          python test_demo.py || true
+          python test_demo.py
 
       - name: 📋 결과 요약
         if: always()
