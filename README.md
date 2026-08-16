@@ -1,8 +1,5 @@
 # QA Automation Foundation — UI 회귀 자동화 기반 (Selenium × Playwright)
 
-> ※ 이 저장소는 `ok`에서 이름 변경을 권장합니다. (Settings → Rename → `qa-automation-foundation`)
-> GitHub이 리다이렉트를 자동 생성하므로 기존 링크도 유지됩니다.
-
 > 자동화 전담 포지션보다는 **릴리즈 품질과 리스크 관리**를 중심으로 하는 QA 포트폴리오입니다.
 > 핵심은 "프레임워크를 얼마나 깊게 만드느냐"가 아니라, **"어떤 흐름을 자동화 대상으로 고르고, 어떻게 회귀 리스크를 줄일지 판단하느냐"** 입니다.
 
